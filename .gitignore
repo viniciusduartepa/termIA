@@ -1,0 +1,23 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+ENV/
+
+# Arquivos compilados do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos gerados pelo PLY
+parser.out
+parsetab.py
+
+# Configurações locais e cache do VSCode
+.vscode/
+.idea/
+
+# Arquivos de ambiente e logs
+*.log
+.env
