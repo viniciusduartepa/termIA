@@ -65,22 +65,14 @@ def make_completer(commands: Iterable[str]):
 
 
 def setup_readline(commands: Iterable[str] | None = None):
-    """
-    Configura o readline com:
-    - completer baseado nos comandos
-    - Tab como tecla de autocomplete (macOS/libedit + GNU readline)
-    """
     if commands is None:
         commands = build_default_commands()
 
     completer = make_completer(commands)
     readline.set_completer(completer)
 
-    # IMPORTANTE: macOS costuma usar libedit, não GNU readline
     doc = readline.__doc__ or ""
     if "libedit" in doc:
-        # Sintaxe especial do libedit (macOS)
         readline.parse_and_bind("bind ^I rl_complete")
     else:
-        # GNU readline (Linux, Python via Homebrew etc.)
         readline.parse_and_bind("tab: complete")
