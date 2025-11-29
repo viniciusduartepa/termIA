@@ -144,6 +144,22 @@ venv\Scripts\activate     # Windows
 ```bash
 pip install -r requirements.txt
 ```
+
+### 🔑 Configurando o Token da Groq APIs
+
+Para que os comandos de IA do TermIA funcionem, você precisa configurar o token da Groq API no arquivo groq_ai_service.py.
+
+Abra o arquivo e localize:
+```python
+class GroqAIService:
+    API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    TOKEN = ""
+```
+Substitua "" pelo seu token da Groq:
+```python
+TOKEN = "gsk_seu_token_aqui"
+```
+
 ### Executar o terminal interativo
 ```bash
 python main.py
