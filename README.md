@@ -8,38 +8,120 @@ O **TermIA** é um terminal inteligente desenvolvido como projeto da disciplina 
 
 - **Python**: Linguagem principal do projeto.
 - **PLY (Python Lex-Yacc)**: Para a implementação do lexer e parser.
+- **Groq API (https://api.groq.com/openai/v1/chat/completions)**: Usada para integrar recursos de inteligência artificial ao terminal, permitindo que comandos específicos sejam processados via modelo de linguagem hospedado na Groq.
 
 ## Gramática do TermIA
 
-A gramática define a estrutura dos comandos que o terminal reconhece:
+A gramática abaixo descreve a estrutura completa dos comandos aceitos pelo seu terminal, conforme a implementação final do parser PLY.
 
+### Visão Geral
 ```text
-program    := stmt_list EOF
-stmt_list  := stmt (';' stmt)*
-stmt       := os_cmd | ia_cmd | meta_cmd
-os_cmd     := IDENT arg*
-arg        := IDENT | STRING | PATH
-ia_cmd     := 'ia' ( 'ask' STRING
-                   | 'summarize' STRING
-                   | 'codeexplain' FILENAME )
-meta_cmd   := 'cd' PATH | 'pwd' | 'history'
+program      := stmt_list
+stmt_list    := stmt | stmt_list ';' stmt
+stmt         := os_cmd | ia_cmd | meta_cmd
 ```
 
-### Programa
-**program**: Programa completo, composto por uma lista de comandos seguida do fim da entrada (EOF).
+### 🧱 OS Commands
+Comandos genéricos (não reservados), aceitam argumentos opcionais.
+```text
+os_cmd       := IDENT args_opt
+args_opt     := args | empty
+args         := arg | args arg
+arg          := IDENT | STRING | PATH
+```
 
-### Lista de Comandos
-**stmt_list**: Lista de comandos, separados opcionalmente por `;`.
+### 🤖 IA Commands
+```text
+os_cmd       := IDENT args_opt
+args_opt     := args | empty
+args         := arg | args arg
+arg          := IDENT | STRING | PATH
+```
+Esses comandos são tratados como:
+```text
+('ia_cmd', 'ia', SUBCOMMAND, VALUE)
+```
 
-### Comando
-**stmt**: Um comando individual, que pode ser:
+### 🏠 Meta Commands (Comandos Internos)
+```text
+meta_cmd     := 'cd' PATH
+              | 'pwd'
+              | 'history'
+              | 'ls'
+              | 'ls' PATH
+              | 'touch' PATH
+              | 'touch' FILENAME
+              | 'rm' PATH
+              | 'rm' FILENAME
+              | 'cat' PATH
+              | 'cat' FILENAME
+              | 'echo' STRING '>'  PATH
+              | 'echo' STRING '>'  FILENAME
+              | 'echo' STRING '>>' PATH
+              | 'echo' STRING '>>' FILENAME
+              | 'mkdir' PATH
+              | 'mkdir' IDENT
+              | 'rmdir' PATH
+              | 'rmdir' IDENT
+              | 'cp' PATH PATH
+              | 'cp' FILENAME FILENAME
+              | 'cp' FILENAME PATH
+              | 'cp' PATH FILENAME
+              | 'mv' PATH PATH
+              | 'mv' FILENAME FILENAME
+              | 'mv' FILENAME PATH
+              | 'mv' PATH FILENAME
+              | 'whoami'
+              | 'date'
+              | 'clear'
+              | 'exit'
+```
 
-- **os_cmd**: Comando do sistema com argumentos opcionais.
-- **ia_cmd**: Comando que interage com a IA (`ask`, `summarize`, `codeexplain`).
-- **meta_cmd**: Comando interno do terminal (`cd`, `pwd`, `history`).
+Esses comandos são tratados como:
+```text
+('meta_cmd', <nome>, [args...])
+```
+ 
+### 📁 Tipos Léxicos
 
-### Argumentos
-**arg**: Argumentos de um comando (`IDENT`, `STRING` ou `PATH`).
+#### STRING
+```text
+"qualquer texto com escapes \" e \\ permitido"
+```
+#### PATH
+Caminhos com pelo menos uma / ou prefixos ./ e ../:
+```text
+./dir/sub/
+../outro/arquivo
+/home/user/docs
+```
+#### FILENAME
+Obrigatoriamente contém extensão:
+```text
+arquivo.txt
+dir/sub/teste.py
+./local/arq.json
+```
+
+#### IDENT
+Identificadores simples e comandos não reservados:
+```text
+run
+deploy
+meucomando
+```
+Se coincidir com uma palavra reservada (ex: cd, ls, ia, ask), vira token especial.
+
+## 🏗️ Funcionamento e Arquitetura
+O TermIA segue a arquitetura clássica de um interpretador: cada comando digitado passa pelo lexer e pelo parser (implementados com PLY), que geram uma estrutura sintática (AST). Essa estrutura é então encaminhada para o componente responsável pela execução:
+
+- MetaCmdHandler: executa comandos internos do terminal (como cd, ls, touch, history, etc.), implementados totalmente em Python.
+
+- IACmdHandler: lida com comandos iniciados por ia, enviando solicitações ao GroqAIService, que realiza a chamada HTTP para a API da Groq e retorna a resposta da IA.
+
+- OS Commands: comandos genéricos (não reservados) são interpretados como chamadas de execução normal de shell.
+
+O loop principal (main.py) integra tudo isso: lê o input, envia ao parser, identifica o tipo de comando e invoca o handler adequado. Essa arquitetura separa parsing, lógica de execução e integração com IA, permitindo extensões simples e organização modular.
 
 ## Como Executar
 
